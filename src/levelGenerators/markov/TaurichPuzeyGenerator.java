@@ -3,15 +3,71 @@ package levelGenerators.markov;
 import engine.core.MarioLevelGenerator;
 import engine.core.MarioLevelModel;
 import engine.core.MarioTimer;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.*;
+
 //
 public class TaurichPuzeyGenerator implements MarioLevelGenerator {
     private final float GAP_PROB = 0.1f;
     private final float Prob = 0.1f;
     Random rnd = new Random();
     String levels[]= {"---x","o--x","o--x","o--x","--xx","x--x","x--x"};
+
+    public static String getLevel(String filepath) {
+        String content = "";
+        try {
+            content = new String(Files.readAllBytes(Paths.get(filepath)));
+        } catch (IOException e) {
+        }
+        return content;
+    }
+
+    //function that takes in a level and returns an array with all the columns in it
+    public String[] levelToColumn(String level){
+        //the full level as an array of characters
+        char[] unsanatizedArray = level.toCharArray();
+
+        //Make a new string
+        //Copy over everything except the carriage returns into a string
+        //make that string into an array
+        String sanatizeString = "";
+        for(int i = 0; i < unsanatizedArray.length; i++){
+            if(unsanatizedArray[i] != '\r'){
+                sanatizeString += unsanatizedArray[i];
+            }
+        }
+        char[] array = sanatizeString.toCharArray();
+
+        //Finds the width of the level
+        int width = 0;
+        for(int i = 0; i < array.length; i++){
+            if(array[i]== '\n'){
+                width = i + 1;
+                if((i + 1 < array.length - 1) && array[i+1] == '\r')
+                    width = i+2;
+                break;
+            }
+        }
+        //Makes an empty string array
+        String columnArray[]= new String[width];
+        for(int c = 0; c < width; c++){
+            columnArray[c]= "";
+        }
+        //Goes through the level and makes a new array where the column is each element
+        for(int characterIndex = 0; characterIndex < array.length; characterIndex++){
+            System.out.println(characterIndex + ": " + array[characterIndex] + " into array number " + characterIndex % width);
+            columnArray[(characterIndex % width)] += array[characterIndex];
+            System.out.println(columnArray[characterIndex % width]);
+        }
+        //returns an array  with each column of the level
+        return columnArray;
+    }
+
 
     public String[] makeStrings(char[][] level){
         String array[]= new String[level.length];
@@ -33,6 +89,7 @@ public class TaurichPuzeyGenerator implements MarioLevelGenerator {
         graph.add(new ArrayList());
         slices.add(level[0]);
         totals.add(0);
+        graph.get(0).add(0);
         numSlices=1;
         int prevSlice=0;
         for (int i=0; i<level.length-1;i++){ //for each section
@@ -95,10 +152,17 @@ public class TaurichPuzeyGenerator implements MarioLevelGenerator {
 
     @Override
     public String getGeneratedLevel(MarioLevelModel model, MarioTimer timer) {
+        //TODO: Get it to take a random level
+        //TODO: Fix the probability to take in the levels
+        String level = getLevel("levels/original/lvl-1.txt");
+
+
         int btm = model.getHeight()-1;
         int end = model.getWidth() -1;
+        String[] columnArray= levelToColumn(level);
 
-        List<Object> values = makeTable(levels);
+
+        List<Object> values = makeTable(columnArray);
         float[][] probs= (float[][]) values.get(0);
         ArrayList<String> slices = (ArrayList<String>) values.get(1);
         System.out.println();
