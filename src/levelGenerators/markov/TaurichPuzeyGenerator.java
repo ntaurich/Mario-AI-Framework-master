@@ -143,9 +143,6 @@ public class TaurichPuzeyGenerator implements MarioLevelGenerator {
 
         return Arrays.asList(probs,slices);
 
-
-        //return probs;
-
     }
 
 
@@ -178,20 +175,34 @@ public class TaurichPuzeyGenerator implements MarioLevelGenerator {
             System.out.println(slices.get(a));
         }
 
-        for(int x =0; x<model.getWidth();x++){
-            float num =  this.rnd.nextFloat();
+        int currLevel =0;
+        model.setBlock(0, btm, MarioLevelModel.GROUND);
+        model.setBlock(0, btm-1, MarioLevelModel.GROUND);
+        model.setBlock(1, btm, MarioLevelModel.GROUND);
+        model.setBlock(2, btm-1, MarioLevelModel.GROUND);
+        model.setBlock(2, btm, MarioLevelModel.GROUND);
+        model.setBlock(2, btm-1, MarioLevelModel.GROUND);
+        model.setBlock(3, btm, MarioLevelModel.GROUND);
+        model.setBlock(3, btm-1, MarioLevelModel.GROUND);
 
-            //gap generation
-            if(num<GAP_PROB){
-                model.setBlock(x, btm, MarioLevelModel.EMPTY);
-                model.setBlock(x, btm-1, MarioLevelModel.EMPTY);
-            }
-            //floor generation
-            else {
-                model.setBlock(x, btm, MarioLevelModel.GROUND);
-                model.setBlock(x, btm - 1, MarioLevelModel.GROUND);
+        //GENERATE LEVEL
+        for(int x =0; x<model.getWidth();x++){
+            for (int i =0; i<probs.length; i++){
+                float num =  this.rnd.nextFloat();
+                if(num<probs[currLevel][i]){
+                    for( int c=0; c<16; c++){
+                        model.setBlock(x,btm-c, slices.get(currLevel).charAt(15-c));
+                        System.out.print(slices.get(currLevel).charAt(c));
+                    }
+                    currLevel=i;
+                    System.out.println();
+                    break;
+                }
             }
         }
+        model.setBlock(end-2, btm, MarioLevelModel.GROUND);
+        model.setBlock(end-1, btm, MarioLevelModel.GROUND);
+        model.setBlock(end, btm, MarioLevelModel.GROUND);
         model.setBlock(end, btm-2,MarioLevelModel.MARIO_EXIT);
         return model.getMap();
     }
