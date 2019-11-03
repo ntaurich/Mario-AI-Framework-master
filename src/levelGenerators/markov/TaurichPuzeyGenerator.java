@@ -132,6 +132,7 @@ public class TaurichPuzeyGenerator implements MarioLevelGenerator {
                 int total= totals.get(i);
                 int curr= graph.get(i).get(j);
                 probs[i][j]= (float) curr/total;
+                probs[i][j]= (float) curr;
             }
             System.out.println();
         }
@@ -141,7 +142,7 @@ public class TaurichPuzeyGenerator implements MarioLevelGenerator {
             System.out.print(totals.get(a));
         }
 
-        return Arrays.asList(probs,slices);
+        return Arrays.asList(probs,slices, totals);
 
     }
 
@@ -162,6 +163,7 @@ public class TaurichPuzeyGenerator implements MarioLevelGenerator {
         List<Object> values = makeTable(columnArray);
         float[][] probs= (float[][]) values.get(0);
         ArrayList<String> slices = (ArrayList<String>) values.get(1);
+        ArrayList<Integer> totals= (ArrayList<Integer>) values.get(2);
         System.out.println();
         for(int i=0; i<probs.length; i++){
             for (int j=0; j<probs.length; j++){
@@ -176,33 +178,64 @@ public class TaurichPuzeyGenerator implements MarioLevelGenerator {
         }
 
         int currLevel =0;
+        int maxBreak=5;
+        int breakWidth =0;
+
+        //set first few blocks
         model.setBlock(0, btm, MarioLevelModel.GROUND);
         model.setBlock(0, btm-1, MarioLevelModel.GROUND);
         model.setBlock(1, btm, MarioLevelModel.GROUND);
-        model.setBlock(2, btm-1, MarioLevelModel.GROUND);
+        model.setBlock(1, btm-1, MarioLevelModel.GROUND);
         model.setBlock(2, btm, MarioLevelModel.GROUND);
         model.setBlock(2, btm-1, MarioLevelModel.GROUND);
         model.setBlock(3, btm, MarioLevelModel.GROUND);
         model.setBlock(3, btm-1, MarioLevelModel.GROUND);
 
         //GENERATE LEVEL
-        for(int x =0; x<model.getWidth();x++){
-            for (int i =0; i<probs.length; i++){
-                float num =  this.rnd.nextFloat();
-                if(num<probs[currLevel][i]){
-                    for( int c=0; c<16; c++){
-                        model.setBlock(x,btm-c, slices.get(currLevel).charAt(15-c));
-                        System.out.print(slices.get(currLevel).charAt(c));
-                    }
-                    currLevel=i;
-                    System.out.println();
+        for(int x =1; x<model.getWidth();x++){//until read end
+            float num = this.rnd.nextInt(totals.get(currLevel));
+            int curr=0;
+            int next=0;
+            //determine next slice
+            for( int i=0; i<totals.size(); i++) {
+                //if reached curr num then break.
+                float currNext = curr+ probs[currLevel][i];
+                if(num<=currNext && num>=curr){
+                    next=i;
                     break;
                 }
+                curr += probs[currLevel][i];
             }
+
+            currLevel=next;
+            //make sure there isn't a large gap
+            if(slices.get(currLevel).charAt(15)=='-'){
+                breakWidth+=1;
+            }
+            if(breakWidth>maxBreak){
+                currLevel=0;
+            }
+
+            //draw slice
+            for( int c=0; c<16; c++){
+                char block= slices.get(currLevel).charAt(15-c);
+                if(block=='F' || block =='M'){ //Ignore flagpole and mario spawn points
+                    block = '-';
+                    System.out.println("FOUND FLAGPOLE or Mario");
+                }
+                model.setBlock(x,btm-c, block);
+                System.out.print(block);
+            }
+            System.out.println();
+
         }
+        //set last few blocks
         model.setBlock(end-2, btm, MarioLevelModel.GROUND);
+        model.setBlock(end-2, btm-1, MarioLevelModel.GROUND);
         model.setBlock(end-1, btm, MarioLevelModel.GROUND);
+        model.setBlock(end-1, btm-1, MarioLevelModel.GROUND);
         model.setBlock(end, btm, MarioLevelModel.GROUND);
+        model.setBlock(end, btm-1, MarioLevelModel.GROUND);
         model.setBlock(end, btm-2,MarioLevelModel.MARIO_EXIT);
         return model.getMap();
     }
